@@ -16,6 +16,7 @@ untouched. See ingest/verify_embeddings.py for the measurement.
 
 from __future__ import annotations
 
+import gzip
 import json
 from pathlib import Path
 
@@ -27,10 +28,24 @@ from embedder import Embedder
 class Retriever:
     def __init__(self, index_dir: Path | str, embedder: Embedder | None = None):
         index_dir = Path(index_dir)
-        self.vectors: np.ndarray = np.load(index_dir / "vectors.npy")
-        self.chunks: list[dict] = [
-            json.loads(line) for line in (index_dir / "chunks.jsonl").read_text().splitlines()
-        ]
+
+        # Two layouts: the unpacked one build_index.py writes locally, and the
+        # packed one shipped through Stratus (float16 vectors, gzipped text).
+        # float16 halves the download; it is widened back to float32 here
+        # because numpy's float16 matmul is far slower than the conversion.
+        packed = index_dir / "vectors.f16.npy"
+        if packed.exists():
+            self.vectors: np.ndarray = np.load(packed).astype(np.float32)
+        else:
+            self.vectors = np.load(index_dir / "vectors.npy")
+
+        chunks_gz = index_dir / "chunks.jsonl.gz"
+        if chunks_gz.exists():
+            text = gzip.decompress(chunks_gz.read_bytes()).decode()
+        else:
+            text = (index_dir / "chunks.jsonl").read_text()
+        self.chunks: list[dict] = [json.loads(line) for line in text.splitlines()]
+
         self.manifest: dict = json.loads((index_dir / "manifest.json").read_text())
 
         if len(self.chunks) != self.vectors.shape[0]:
