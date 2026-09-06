@@ -31,10 +31,17 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from entity_gate import EntityGate
 from retriever import Retriever
 
 HERE = Path(__file__).parent
 INDEX_DIR = Path(os.environ.get("INDEX_DIR", HERE / "index"))
+
+# The named-entity gate is switchable so the agent can measure what it is
+# worth. Its whole justification is a number — no-match precision with it
+# versus without — and a gate you cannot turn off is a gate you cannot
+# evaluate.
+ENTITY_GATE = os.environ.get("ENTITY_GATE", "1") not in ("0", "false", "")
 
 # Carried over from the Netcup original unchanged, and that is defensible
 # only because the embedder is the same model in the same cosine space —
@@ -61,6 +68,7 @@ SYSTEM_PROMPT = (
 app = FastAPI(title="Krishnamurti RAG (Catalyst)")
 
 _retriever: Retriever | None = None
+_gate: EntityGate | None = None
 
 
 def retriever() -> Retriever:
@@ -70,6 +78,15 @@ def retriever() -> Retriever:
     return _retriever
 
 
+def gate() -> EntityGate | None:
+    global _gate
+    if not ENTITY_GATE:
+        return None
+    if _gate is None:
+        _gate = EntityGate(INDEX_DIR / "vocabulary.json")
+    return _gate
+
+
 @app.on_event("startup")
 def warm() -> None:
     # Load the index and run one encode at boot. Deferring it to the first
@@ -77,8 +94,10 @@ def warm() -> None:
     # where it is a user-visible timeout rather than a slower cold start.
     r = retriever()
     r.embedder.encode_one("warm")
+    g = gate()
     print(f"index ready: {r.manifest['chunks']:,} chunks from "
           f"{r.manifest['talks']:,} talks (corpus {r.manifest['corpus_fingerprint']})")
+    print(f"entity gate: {'on, ' + format(len(g.capitalised), ',') + ' known names' if g else 'off'}")
 
 
 class Ask(BaseModel):
@@ -168,6 +187,22 @@ async def ask(body: Ask) -> dict:
     if not question:
         return {"error": "empty question"}
 
+    # Before retrieval, not after: if the question asks what someone absent
+    # from the corpus said, no passage can answer it, however well it scores.
+    g = gate()
+    refusal = g.refusal(question) if g else None
+    if refusal:
+        return {
+            "no_match": True,
+            "refused_by": "entity_gate",
+            "unknown_entities": g.unknown_entities(question),
+            "question": question,
+            "best_relevance": 0.0,
+            "passages": [],
+            "answer": refusal,
+            "latency_seconds": round(time.time() - t0, 2),
+        }
+
     passages = retriever().search(
         question, n_results=N_PASSAGES, include_early=body.include_early
     )
@@ -179,6 +214,7 @@ async def ask(body: Ask) -> dict:
         # is precisely what the off-corpus half of the golden set tests for.
         return {
             "no_match": True,
+            "refused_by": "relevance_threshold",
             "question": question,
             "best_relevance": best,
             "passages": passages,
