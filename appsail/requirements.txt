@@ -1,3 +1,14 @@
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 httpx==0.27.2
+numpy==2.1.1
+onnxruntime==1.19.2
+tokenizers==0.20.0
+
+# zcatalyst-sdk is installed --no-deps in the Dockerfile. Its metadata pins
+# typing-extensions~=4.12.1, which contradicts pydantic 2.13's >=4.14.1 and
+# leaves pip resolving to a combination that imports but fails at runtime.
+# The SDK's only real dependency is requests, so we supply that ourselves
+# and skip its pin rather than downgrade FastAPI to satisfy a constraint the
+# SDK does not actually need.
+requests==2.32.3

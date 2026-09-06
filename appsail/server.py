@@ -26,11 +26,12 @@ import time
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+import index_store
 from entity_gate import EntityGate
 from retriever import Retriever
 
@@ -54,6 +55,13 @@ MAX_QUESTION_CHARS = 500
 
 # Set in the AppSail console — custom-runtime env vars cannot be supplied
 # through app-config.json or the CLI (plan §3.2).
+# Guards the re-index endpoint. This is a secret we mint, not a Zoho
+# credential — it authorises "may push an index", nothing else, and it is
+# what the agent holds. Unset means the endpoint is closed, so a container
+# that is missing its config refuses writes instead of accepting anonymous
+# ones.
+INDEX_PUSH_TOKEN = os.environ.get("INDEX_PUSH_TOKEN", "")
+
 QUICKML_LLM_URL = os.environ.get("QUICKML_LLM_URL", "")
 QUICKML_AUTH_TOKEN = os.environ.get("QUICKML_AUTH_TOKEN", "")
 LLM_TIMEOUT = float(os.environ.get("LLM_TIMEOUT", "20"))
@@ -69,6 +77,11 @@ app = FastAPI(title="Krishnamurti RAG (Catalyst)")
 
 _retriever: Retriever | None = None
 _gate: EntityGate | None = None
+
+# Set when startup could not obtain an index. Non-empty means /api/ask is
+# unavailable but the container is alive and can be repaired through
+# /admin/index — see warm().
+_degraded: str = ""
 
 
 def retriever() -> Retriever:
@@ -92,6 +105,20 @@ def warm() -> None:
     # Load the index and run one encode at boot. Deferring it to the first
     # request would spend that cost inside AppSail's 30s request budget,
     # where it is a user-visible timeout rather than a slower cold start.
+    # Startup must survive having no index at all. On a first deploy the
+    # bucket is empty, and the only route that can fill it is /admin/index
+    # on this very container — so a startup that exits on a missing index
+    # deadlocks the bootstrap: no index means no app, and no app means no
+    # way to push one. Degraded-but-listening is the only state that can
+    # dig itself out.
+    global _degraded
+    try:
+        print(f"index fetch: {index_store.ensure_index(INDEX_DIR)}")
+    except Exception as e:
+        _degraded = f"{type(e).__name__}: {e}"
+        print(f"NO INDEX — serving /health and /admin only: {_degraded}")
+        return
+
     r = retriever()
     r.embedder.encode_one("warm")
     g = gate()
@@ -165,6 +192,9 @@ async def synthesise(question: str, passages: list[dict]) -> tuple[str, str | No
 
 @app.get("/health")
 def health() -> dict:
+    if _degraded:
+        return {"ok": False, "degraded": True, "error": _degraded,
+                "index_push_configured": bool(INDEX_PUSH_TOKEN)}
     try:
         r = retriever()
         return {
@@ -182,6 +212,8 @@ def health() -> dict:
 
 @app.post("/api/ask")
 async def ask(body: Ask) -> dict:
+    if _degraded:
+        raise HTTPException(503, f"index unavailable: {_degraded}")
     t0 = time.time()
     question = body.question.strip()[:MAX_QUESTION_CHARS]
     if not question:
@@ -232,6 +264,48 @@ async def ask(body: Ask) -> dict:
         "synthesis_error": error,
         "latency_seconds": round(time.time() - t0, 2),
     }
+
+
+@app.put("/admin/index/{key}")
+async def push_index_object(
+    key: str,
+    request: Request,
+    x_index_token: str = Header(default=""),
+) -> dict:
+    """
+    Push one index object to Stratus.
+
+    This exists because the container is the only place with Catalyst
+    credentials: the SDK derives them from headers Catalyst injects into
+    this very request (see index_store.put_object). A laptop cannot write
+    to Stratus without an OAuth client; the running app can, without one.
+
+    Note what this does NOT do: it does not swap the live index. It writes
+    to object storage and stops. Promotion is a separate, human-approved
+    step — an endpoint that re-indexed and cut over in one call would let
+    the agent ship an unevaluated corpus to production, which is the exact
+    failure the release gate exists to prevent.
+    """
+    if not INDEX_PUSH_TOKEN:
+        raise HTTPException(503, "index push is not configured on this instance")
+    # compare_digest rather than ==: token comparison should not leak its
+    # answer through timing, cheap as that attack is here.
+    import hmac
+    if not hmac.compare_digest(x_index_token, INDEX_PUSH_TOKEN):
+        raise HTTPException(403, "bad index push token")
+    if key not in index_store.OBJECTS:
+        raise HTTPException(400, f"unexpected object {key!r}; expected one of {index_store.OBJECTS}")
+
+    body = await request.body()
+    if not body:
+        raise HTTPException(400, "empty body")
+    try:
+        return index_store.put_object(request, key, body)
+    except Exception as e:
+        # Surface the SDK's own error text: if this fails it will almost
+        # certainly be the credential-header question, and a generic 500
+        # would hide the one detail worth reading.
+        raise HTTPException(500, f"{type(e).__name__}: {e}") from e
 
 
 app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
