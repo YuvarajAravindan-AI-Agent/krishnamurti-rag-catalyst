@@ -2,33 +2,108 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Krishnamurti RAG - Catalyst 3.0</title>
+<title>Krishnamurti RAG — Catalyst 3.0</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  body { font-family: Georgia, serif; max-width: 720px; margin: 40px auto; padding: 0 16px; color: #222; background: #fafaf7; }
-  h1 { font-size: 1.4rem; font-weight: normal; border-bottom: 1px solid #ccc; padding-bottom: 12px; }
-  textarea { width: 100%; font-size: 1rem; padding: 10px; box-sizing: border-box; }
-  button { margin-top: 10px; padding: 8px 20px; font-size: 1rem; cursor: pointer; }
-  .passages { background: #fff; border-left: 3px solid #999; padding: 12px 16px; margin-top: 20px; }
-  .passage { margin-bottom: 14px; font-size: 0.9rem; }
-  .passage cite { display: block; color: #666; font-size: 0.8rem; margin-top: 4px; }
-  .answer-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #888; margin-top: 24px; }
-  .answer { font-size: 1.05rem; line-height: 1.6; }
-  .meta { font-size: 0.75rem; color: #999; margin-top: 20px; }
+  :root {
+    --bg: #fbfaf8; --fg: #1a1a18; --dim: #6b6862; --line: #e2ded6;
+    --accent: #7a6a52; --card: rgba(255,255,255,.70); --quote: #2a2825;
+    --sketch: .26;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16151a; --fg: #e8e6e1; --dim: #8f8a82; --line: #2c2a30;
+      --accent: #b9a684; --card: rgba(29,28,34,.70); --quote: #ddd9d2;
+      --sketch: .20;
+    }
+  }
+  * { box-sizing: border-box; }
+
+  /* Same alpha-mask portrait used on the Netcup original (jk.ai-agentic-enterprises.com):
+     the page paints it in its own text colour, so one PNG works in light and
+     dark without two files. Fixed, so text scrolls over a still drawing. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-color: var(--fg);
+    opacity: var(--sketch);
+    -webkit-mask-image: url('/static/jk.png');
+    mask-image: url('/static/jk.png');
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: 50% 18%;
+    mask-position: 50% 18%;
+    -webkit-mask-size: auto 95vh;
+    mask-size: auto 95vh;
+  }
+  .wrap { position: relative; z-index: 1; max-width: 46rem; margin: 0 auto; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.65 Georgia, 'Iowan Old Style', serif;
+    padding: 2rem 1.25rem 5rem;
+  }
+  header { margin-bottom: 2rem; }
+  h1 { font-size: 1.35rem; font-weight: 600; margin: 0 0 .35rem; letter-spacing: -.01em; }
+  .sub { color: var(--dim); font-size: .9rem; font-style: italic; margin: 0; }
+  form { display: flex; gap: .5rem; margin: 1.5rem 0 .6rem; }
+  textarea {
+    flex: 1; padding: .75rem .9rem; font: inherit; font-size: .95rem;
+    background: var(--card); color: var(--fg); resize: vertical;
+    border: 1px solid var(--line); border-radius: 6px;
+  }
+  textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  button {
+    padding: .75rem 1.2rem; font: inherit; font-size: .9rem; cursor: pointer;
+    background: var(--accent); color: var(--bg);
+    border: 0; border-radius: 6px; white-space: nowrap; align-self: flex-start;
+  }
+  button:disabled { opacity: .45; cursor: default; }
+  .passage {
+    background: var(--card); border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px; padding: 1rem 1.15rem; margin: 0 0 1rem;
+  }
+  .passage p { margin: 0 0 .7rem; color: var(--quote); }
+  .cite { display: block; font-size: .78rem; color: var(--dim); font-family: system-ui, sans-serif; }
+  .sect {
+    font-family: system-ui, sans-serif; font-size: .72rem; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--dim);
+    margin: 2.2rem 0 .9rem; padding-bottom: .4rem; border-bottom: 1px solid var(--line);
+  }
+  #synth { white-space: pre-wrap; color: var(--fg); font-size: 1.05rem; line-height: 1.6; }
+  .meta {
+    font-family: system-ui, sans-serif; font-size: .78rem; color: var(--dim);
+    margin-top: 1.5rem;
+  }
+  footer { margin-top: 3.5rem; font-size: .78rem; color: var(--dim);
+           font-family: system-ui, sans-serif; border-top: 1px solid var(--line); padding-top: 1rem; }
 </style>
 </head>
 <body>
-<h1>Krishnamurti RAG — running on Zoho Catalyst 3.0</h1>
-<p>Ask a question grounded in the K Foundation transcript corpus. Passages are shown first, exactly as retrieved; the summary below is model-written and may be wrong — check it against the passages.</p>
-<textarea id="q" rows="2" placeholder="What is fear?"></textarea><br>
-<button id="ask">Ask</button>
+<div class="wrap">
+<header>
+  <h1>Krishnamurti RAG — on Zoho Catalyst 3.0</h1>
+  <p class="sub">His words, with their source. Not a bot speaking in his voice.</p>
+</header>
+<form onsubmit="return false">
+  <textarea id="q" rows="2" placeholder="what is fear?"></textarea>
+  <button id="ask">Ask</button>
+</form>
+<div id="status"></div>
 <div id="result"></div>
+<footer>Retrieval over the K Foundation transcript corpus, served via QuickML on Catalyst 3.0. Answers are grounded in retrieved passages, never generated from memory.</footer>
+</div>
 <script>
 document.getElementById('ask').onclick = async () => {
   const q = document.getElementById('q').value.trim();
   if (!q) return;
+  const status = document.getElementById('status');
   const result = document.getElementById('result');
-  result.innerHTML = '<p><em>Retrieving passages…</em></p>';
+  status.textContent = 'Retrieving passages…';
+  result.innerHTML = '';
   const t0 = performance.now();
   try {
     const res = await fetch('/api/ask', {
@@ -38,17 +113,20 @@ document.getElementById('ask').onclick = async () => {
     });
     const data = await res.json();
     const elapsed = ((performance.now() - t0) / 1000).toFixed(2);
+    status.textContent = '';
     const passages = (data.passages || []).map(p =>
-      `<div class="passage">${(p.text || p.content || JSON.stringify(p))}<cite>${p.source || p.url || ''}</cite></div>`
-    ).join('') || '<p><em>No passages returned.</em></p>';
+      `<div class="passage"><p>${(p.text || p.content || JSON.stringify(p))}</p><cite class="cite">${p.source || p.url || ''}</cite></div>`
+    ).join('') || '<div class="passage"><p><em>No passages returned — likely outside the corpus.</em></p></div>';
     result.innerHTML = `
-      <div class="passages">${passages}</div>
-      <div class="answer-label">Model-written summary</div>
-      <div class="answer">${data.answer || '<em>No answer returned.</em>'}</div>
+      <div class="sect">Passages</div>
+      ${passages}
+      <div class="sect">Model-written summary</div>
+      <div id="synth">${data.answer || '<em>No answer returned.</em>'}</div>
       <div class="meta">server latency: ${data.latency_seconds}s · round-trip: ${elapsed}s</div>
     `;
   } catch (e) {
-    result.innerHTML = `<p style="color:red">Error: ${e}</p>`;
+    status.textContent = '';
+    result.innerHTML = `<p style="color:#b04a4a">Error: ${e}</p>`;
   }
 };
 </script>
