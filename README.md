@@ -107,14 +107,32 @@ failure mode rather than papered over.
 
 Current results on the full archive:
 
-| category | want | result |
-| --- | --- | --- |
-| in-corpus (25) | answer | 25/25 |
-| `random` (8) | refuse | 8/8, by cosine |
-| `absent-person` (3) | refuse | 3/3, by the gate |
-| `mentioned-not-taught` (4) | refuse | 1/4 — and that one only because `Dalai` falls under `KNOWN_ENTITY_MIN`; right answer, wrong reason |
+Measured against the live deployment. A refusal counts only when the
+mechanism that fired is the one the category expects — `expected_gate` in
+`eval/golden_set.json` — because a refusal by the wrong mechanism will
+disappear the moment the corpus shifts.
+
+| category | want | correctly refused | notes |
+| --- | --- | --- | --- |
+| in-corpus (25) | answer | 25/25 | no gate false positives |
+| `random` (8) | refuse | 8/8 | all by cosine, incl. "capital of France" |
+| `absent-person` (3) | refuse | 3/3 | all by the entity gate |
+| `mentioned-not-taught` (4) | refuse | **0/4** | 3 answered at 0.55–0.62; 1 accidental |
+
+That last row is the open problem. The Dalai Lama question *is* refused, but
+only because `Dalai` occurs twice — under `KNOWN_ENTITY_MIN = 3`. One more
+mention anywhere in the archive and it silently starts being answered, with
+nothing about the handling having changed. The agent scores it as a miss.
+
+No-match precision is therefore **0.733** against a 0.90 threshold, and the
+release agent's verdict on this build is **REJECT**. Lowering the threshold
+would make it pass; that is the move this project exists to argue against.
 
 ## Live app
 
-TBD — will be linked here once the AppSail deployment passes shadow testing.
+Running on Catalyst AppSail (Development). Synthesis is not yet wired, so it
+returns cited passages without a generated summary — the part that is
+actually load-bearing. The URL will be published here once QuickML LLM
+Serving is connected.
+
 Netcup original (rollback target during transition): https://jk.ai-agentic-enterprises.com
