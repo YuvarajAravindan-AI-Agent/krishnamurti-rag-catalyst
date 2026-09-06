@@ -17,3 +17,4 @@ appsail/models
 appsail/index
 index-full/
 dist/
+.env.local

@@ -1,0 +1,17 @@
+# The build context is the repo root (see appsail/Dockerfile), so the large
+# working artifacts have to be excluded explicitly or every build ships
+# ~600 MB to the daemon before doing anything.
+.git
+.venv
+index
+index-full
+dist
+data
+reference
+eval
+agent
+docs
+scripts
+ingest
+**/__pycache__
+*.pyc

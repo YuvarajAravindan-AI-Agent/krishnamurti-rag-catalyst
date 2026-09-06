@@ -26,6 +26,7 @@ short-lived job, not public read.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import time
@@ -100,19 +101,76 @@ def ensure_index(index_dir: Path | str) -> dict:
     }
 
 
+def _bucket(req):
+    """
+    The SDK bucket handle, authenticated as the caller.
+
+    req is the inbound request; the SDK reads Catalyst's injected credential
+    headers off it. This only works from inside a deployed AppSail — running
+    it locally raises CatalystCredentialError('Admin credential type is
+    unknown'), which is the correct failure rather than something to paper
+    over.
+    """
+    import zcatalyst_sdk  # imported lazily: local dev must not need it
+
+    return zcatalyst_sdk.initialize(req=req).stratus().bucket(BUCKET_NAME)
+
+
+def initiate_multipart(req, key: str) -> dict:
+    """Start a multipart upload and return the id the parts will carry."""
+    res = _bucket(req).initiate_multipart_upload(key)
+    # The SDK returns the raw API response; the id lives under different
+    # keys depending on shape, so pull it defensively rather than assume.
+    upload_id = None
+    if isinstance(res, dict):
+        upload_id = res.get("upload_id") or res.get("uploadId") or (
+            res.get("data", {}).get("upload_id") if isinstance(res.get("data"), dict) else None
+        )
+    if not upload_id:
+        raise RuntimeError(f"could not find upload_id in initiate response: {str(res)[:300]}")
+    return {"key": key, "upload_id": upload_id}
+
+
+def upload_part(req, key: str, upload_id: str, part_number: int, body: bytes) -> dict:
+    """
+    Upload one part.
+
+    Returns the sha256 of exactly the bytes Stratus was handed, so the
+    caller can compare it against what it sent. A part that arrives
+    truncated would otherwise assemble into a corrupt index that only
+    fails later, during evaluation, looking like a retrieval regression.
+    """
+    ok = _bucket(req).upload_part(key, upload_id, body, part_number, overwrite=True)
+    return {
+        "key": key,
+        "part_number": part_number,
+        "bytes": len(body),
+        "sha256": hashlib.sha256(body).hexdigest(),
+        "ok": bool(ok),
+    }
+
+
+def complete_multipart(req, key: str, upload_id: str) -> dict:
+    """Assemble the parts into the finished object."""
+    bucket = _bucket(req)
+    ok = bucket.complete_multipart_upload(key, upload_id, overwrite=True)
+    summary = None
+    try:
+        summary = bucket.get_multipart_upload_summary(key, upload_id)
+    except Exception as e:  # summary is evidence, not a precondition
+        summary = f"unavailable: {type(e).__name__}: {e}"
+    return {"key": key, "upload_id": upload_id, "ok": bool(ok), "summary": summary}
+
+
 def put_object(req, key: str, body: bytes) -> dict:
     """
     Write one index object to Stratus, authenticated as the caller.
 
-    req is the inbound request; the SDK reads Catalyst's injected credential
-    headers off it. This only works from inside a deployed AppSail — running
-    it locally raises CatalystAppError('Catalyst headers are empty'), which
-    is the correct failure rather than something to paper over.
+    Single-shot, so only for the small objects — manifest.json and
+    vocabulary.json. The large ones must go through multipart or they will
+    exceed AppSail's 30s request ceiling on any ordinary uplink.
     """
-    import zcatalyst_sdk  # imported lazily: local dev must not need it
-
-    app = zcatalyst_sdk.initialize(req=req)
-    bucket = app.stratus().bucket(BUCKET_NAME)
+    bucket = _bucket(req)
     t0 = time.time()
     result = bucket.put_object(key, body, {"overwrite": "true"})
     return {

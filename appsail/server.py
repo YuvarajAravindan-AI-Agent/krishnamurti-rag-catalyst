@@ -21,6 +21,7 @@ with "here is what a model says he meant".
 
 from __future__ import annotations
 
+import hmac
 import os
 import time
 from pathlib import Path
@@ -266,46 +267,97 @@ async def ask(body: Ask) -> dict:
     }
 
 
-@app.put("/admin/index/{key}")
-async def push_index_object(
-    key: str,
-    request: Request,
-    x_index_token: str = Header(default=""),
-) -> dict:
+def _authorise(key: str, token: str) -> None:
     """
-    Push one index object to Stratus.
+    Guard shared by every index-write route.
 
-    This exists because the container is the only place with Catalyst
-    credentials: the SDK derives them from headers Catalyst injects into
-    this very request (see index_store.put_object). A laptop cannot write
-    to Stratus without an OAuth client; the running app can, without one.
+    These routes exist because the container is the only place with Catalyst
+    credentials: the SDK derives them from headers Catalyst injects into the
+    inbound request. A laptop cannot write to Stratus without an OAuth
+    client; the running app can, without one.
 
-    Note what this does NOT do: it does not swap the live index. It writes
-    to object storage and stops. Promotion is a separate, human-approved
-    step — an endpoint that re-indexed and cut over in one call would let
-    the agent ship an unevaluated corpus to production, which is the exact
-    failure the release gate exists to prevent.
+    Note what none of them do: swap the live index. They write to object
+    storage and stop. Promotion is a separate, human-approved step — a
+    re-index that cut over in the same call would let the agent ship an
+    unevaluated corpus to production, the exact failure the release gate
+    exists to prevent.
     """
     if not INDEX_PUSH_TOKEN:
         raise HTTPException(503, "index push is not configured on this instance")
     # compare_digest rather than ==: token comparison should not leak its
     # answer through timing, cheap as that attack is here.
-    import hmac
-    if not hmac.compare_digest(x_index_token, INDEX_PUSH_TOKEN):
+    if not hmac.compare_digest(token, INDEX_PUSH_TOKEN):
         raise HTTPException(403, "bad index push token")
     if key not in index_store.OBJECTS:
         raise HTTPException(400, f"unexpected object {key!r}; expected one of {index_store.OBJECTS}")
 
+
+def _sdk_call(fn, *args, **kwargs) -> dict:
+    try:
+        return fn(*args, **kwargs)
+    except Exception as e:
+        # Surface the SDK's own error text: failures here are almost always
+        # the credential-header question, and a generic 500 would hide the
+        # one detail worth reading.
+        raise HTTPException(500, f"{type(e).__name__}: {e}") from e
+
+
+@app.put("/admin/index/{key}")
+async def push_index_object(
+    key: str, request: Request, x_index_token: str = Header(default="")
+) -> dict:
+    """Single-shot write. Only safe for the small objects — see below."""
+    _authorise(key, x_index_token)
     body = await request.body()
     if not body:
         raise HTTPException(400, "empty body")
-    try:
-        return index_store.put_object(request, key, body)
-    except Exception as e:
-        # Surface the SDK's own error text: if this fails it will almost
-        # certainly be the credential-header question, and a generic 500
-        # would hide the one detail worth reading.
-        raise HTTPException(500, f"{type(e).__name__}: {e}") from e
+    return _sdk_call(index_store.put_object, request, key, body)
+
+
+@app.post("/admin/index/{key}/initiate")
+async def initiate_index_upload(
+    key: str, request: Request, x_index_token: str = Header(default="")
+) -> dict:
+    """
+    Begin a multipart upload.
+
+    The large objects cannot go up in one request: vectors.f16.npy is
+    126 MB, and AppSail's request ceiling is 30 seconds, so on any ordinary
+    uplink a single-shot PUT is killed mid-body. Parts sized to fit inside
+    that budget are the only shape that works.
+
+    The upload id Stratus returns is held server-side, which is what makes
+    this safe across instances — successive parts may well be answered by
+    different containers, and none of them need to share local state.
+    """
+    _authorise(key, x_index_token)
+    return _sdk_call(index_store.initiate_multipart, request, key)
+
+
+@app.put("/admin/index/{key}/part/{part_number}")
+async def upload_index_part(
+    key: str,
+    part_number: int,
+    upload_id: str,
+    request: Request,
+    x_index_token: str = Header(default=""),
+) -> dict:
+    _authorise(key, x_index_token)
+    body = await request.body()
+    if not body:
+        raise HTTPException(400, "empty part body")
+    return _sdk_call(index_store.upload_part, request, key, upload_id, part_number, body)
+
+
+@app.post("/admin/index/{key}/complete")
+async def complete_index_upload(
+    key: str,
+    upload_id: str,
+    request: Request,
+    x_index_token: str = Header(default=""),
+) -> dict:
+    _authorise(key, x_index_token)
+    return _sdk_call(index_store.complete_multipart, request, key, upload_id)
 
 
 app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
