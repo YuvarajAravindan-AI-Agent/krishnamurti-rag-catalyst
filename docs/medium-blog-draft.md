@@ -38,11 +38,10 @@ retrieval config, or the prompt, it:
 2. Runs a 40-question golden evaluation suite against the candidate —
    25 in-corpus questions spanning K's recurring themes (fear, authority,
    self-knowledge, relationship, awareness, thought, love, truth, memory,
-   freedom), and 15 off-corpus questions, including adversarial
-   "adjacent-but-wrong" traps: questions about Osho, Ramana Maharshi,
-   Eckhart Tolle — real teachers whose material is genuinely absent from
-   this corpus, chosen specifically because a lazy retrieval system would
-   be tempted to answer them anyway.
+   freedom), and 15 off-corpus questions split by *why* they are
+   unanswerable: unrelated topics, questions naming a teacher with zero
+   occurrences in the corpus, and questions naming someone the corpus does
+   contain but never as their own teaching.
 3. Measures retrieval recall, citation accuracy (does every in-corpus
    answer carry a real kfoundation.org URL), an LLM-judged
    unsupported-claims rate, no-match precision on the off-corpus set, and
@@ -51,22 +50,60 @@ retrieval config, or the prompt, it:
 5. **Stops.** A human has to look at the report and click promote. The
    agent never touches production on its own.
 
-## The part worth actually watching
+## Retrieval didn't end up on QuickML, and that's the interesting part
 
-Anyone can demo the happy path. What proves the safety boundary is real is
-watching it catch a regression. So after the first clean promotion, I made
-a deliberate change — shrinking chunk overlap enough to plausibly hurt
-citation accuracy — and ran the agent again. [Result to be filled in once
-the shadow test / regression run completes: recommendation, which metric
-failed, by how much.]
+The plan was to put retrieval on QuickML's Knowledge Base. It can't go
+there. The Knowledge Base has no ingestion API — documents go in through the
+console UI, ten files at a time. For a one-off migration that's tedious. For
+this project it's disqualifying: an agent that cannot re-index cannot run
+"re-index, then evaluate", which is the entire loop.
+
+So retrieval moved into the AppSail container: the same `all-MiniLM-L6-v2`
+model Ollama was serving, this time through ONNX Runtime, scoring an exact
+dot product against a normalised matrix. 164k chunks, ~250 MB resident,
+single-digit-millisecond queries, and — because it's the same model in the
+same cosine space — the `MIN_RELEVANCE = 0.5` threshold carries over intact.
+I measured that rather than assuming it: mean cosine agreement of 0.999998
+against 300 vectors pulled out of the live Chroma collection.
+
+QuickML kept the job it's genuinely good at: synthesis, off-box, away from
+AppSail's 30-second ceiling.
+
+## Two things the evaluation caught
+
+**A live bug in the app I was migrating away from.** Ask the production
+Netcup site "what did Osho teach about meditation?" and it scores 0.618,
+sails past its own threshold, and answers. The question is legitimately
+about meditation, so cosine distance cannot reject it. Every named-teacher
+question in the set did this. The fix is a second gate that refuses
+questions naming proper nouns absent from the corpus — with every name it
+knows derived from the corpus itself, because a hardcoded list of rival
+teachers would just be tuned to my own traps.
+
+**An error in my evaluation set.** I had labelled seven questions as traps
+whose subjects were "genuinely absent". Four weren't. K discusses the
+Bhagavad Gita 803 times, refers to Rajneesh, describes meeting the Dalai
+Lama. On Ramana Maharshi, Gstaad, 16 August 1962: *"I don't know these
+birds… Why should I know them?"*
+
+They're still unanswerable — the archive contains his refusal of the
+subject, not the teaching — but that's a different and harder failure than
+"the name isn't there", and no proper-noun gate can catch it. So the
+honest scoreboard is 3/3 on absent-person questions, 8/8 on unrelated ones,
+25/25 in-corpus, and 0/4 on the category I only discovered by being wrong.
+
+That last number stays in the report. A demo tuned until everything passes
+demonstrates nothing; the reason to build a judge is that it can tell you
+your own scoring was wrong.
 
 ## What's next
 
-- [ ] Full 3,014-transcript ingestion (a manual/batched follow-up — QuickML's
-      Knowledge Base has no bulk upload API, only a console UI capped at
-      10 files/round)
+- [ ] QuickML LLM Serving wired for synthesis
+- [ ] Index served from Stratus object storage at container start
 - [ ] 30-day parallel run against the Netcup original before decommissioning it
 - [ ] A recorded walkthrough of the agent's reject run — that's the actual
       demo, not the RAG app itself
+- [ ] A real answer for `mentioned-not-taught`, which is currently an open
+      problem rather than a solved one
 
 GitHub: [link] · Live app: [link] · LinkedIn: [link]

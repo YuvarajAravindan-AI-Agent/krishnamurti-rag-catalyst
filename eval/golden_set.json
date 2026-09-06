@@ -1,46 +1,179 @@
 {
   "in_corpus": [
-    {"q": "what is fear?", "theme": "fear"},
-    {"q": "why does fear control our lives?", "theme": "fear"},
-    {"q": "is it possible to be free of fear completely?", "theme": "fear"},
-    {"q": "what is the relationship between thought and fear?", "theme": "fear"},
-    {"q": "why do we seek authority in matters of the mind?", "theme": "authority"},
-    {"q": "can a guru actually help you understand yourself?", "theme": "authority"},
-    {"q": "what is the danger of following a spiritual teacher?", "theme": "authority"},
-    {"q": "what is self-knowledge?", "theme": "self-knowledge"},
-    {"q": "how do you observe yourself without judgment?", "theme": "self-knowledge"},
-    {"q": "the observer is the observed - what does that mean?", "theme": "self-knowledge"},
-    {"q": "what is the root of conflict in relationship?", "theme": "relationship"},
-    {"q": "can two people live together without friction?", "theme": "relationship"},
-    {"q": "what does it mean to truly listen to another person?", "theme": "relationship"},
-    {"q": "what is awareness without choice?", "theme": "awareness"},
-    {"q": "how is meditation different from concentration?", "theme": "awareness"},
-    {"q": "can the mind be free of all conditioning?", "theme": "awareness"},
-    {"q": "what is the nature of thought itself?", "theme": "thought"},
-    {"q": "why does the mind seek security through belief?", "theme": "thought"},
-    {"q": "what is love, and is it different from desire?", "theme": "love"},
-    {"q": "why do we compare ourselves to others?", "theme": "comparison"},
-    {"q": "is there a difference between the thinker and the thought?", "theme": "thought"},
-    {"q": "what is the nature of truth - can it be organized into a system?", "theme": "truth"},
-    {"q": "why does the mind cling to the past?", "theme": "memory"},
-    {"q": "what is total freedom and is it different from doing what one likes?", "theme": "freedom"},
-    {"q": "what did you mean by 'freedom from the known'?", "theme": "freedom"}
+    {
+      "q": "what is fear?",
+      "theme": "fear"
+    },
+    {
+      "q": "why does fear control our lives?",
+      "theme": "fear"
+    },
+    {
+      "q": "is it possible to be free of fear completely?",
+      "theme": "fear"
+    },
+    {
+      "q": "what is the relationship between thought and fear?",
+      "theme": "fear"
+    },
+    {
+      "q": "why do we seek authority in matters of the mind?",
+      "theme": "authority"
+    },
+    {
+      "q": "can a guru actually help you understand yourself?",
+      "theme": "authority"
+    },
+    {
+      "q": "what is the danger of following a spiritual teacher?",
+      "theme": "authority"
+    },
+    {
+      "q": "what is self-knowledge?",
+      "theme": "self-knowledge"
+    },
+    {
+      "q": "how do you observe yourself without judgment?",
+      "theme": "self-knowledge"
+    },
+    {
+      "q": "the observer is the observed - what does that mean?",
+      "theme": "self-knowledge"
+    },
+    {
+      "q": "what is the root of conflict in relationship?",
+      "theme": "relationship"
+    },
+    {
+      "q": "can two people live together without friction?",
+      "theme": "relationship"
+    },
+    {
+      "q": "what does it mean to truly listen to another person?",
+      "theme": "relationship"
+    },
+    {
+      "q": "what is awareness without choice?",
+      "theme": "awareness"
+    },
+    {
+      "q": "how is meditation different from concentration?",
+      "theme": "awareness"
+    },
+    {
+      "q": "can the mind be free of all conditioning?",
+      "theme": "awareness"
+    },
+    {
+      "q": "what is the nature of thought itself?",
+      "theme": "thought"
+    },
+    {
+      "q": "why does the mind seek security through belief?",
+      "theme": "thought"
+    },
+    {
+      "q": "what is love, and is it different from desire?",
+      "theme": "love"
+    },
+    {
+      "q": "why do we compare ourselves to others?",
+      "theme": "comparison"
+    },
+    {
+      "q": "is there a difference between the thinker and the thought?",
+      "theme": "thought"
+    },
+    {
+      "q": "what is the nature of truth - can it be organized into a system?",
+      "theme": "truth"
+    },
+    {
+      "q": "why does the mind cling to the past?",
+      "theme": "memory"
+    },
+    {
+      "q": "what is total freedom and is it different from doing what one likes?",
+      "theme": "freedom"
+    },
+    {
+      "q": "what did you mean by 'freedom from the known'?",
+      "theme": "freedom"
+    }
   ],
   "off_corpus": [
-    {"q": "how do I install postgresql on ubuntu?", "type": "random"},
-    {"q": "bitcoin price prediction for next year", "type": "random"},
-    {"q": "who won the 1998 football world cup?", "type": "random"},
-    {"q": "recipe for banana bread", "type": "random"},
-    {"q": "kubernetes ingress controller configuration", "type": "random"},
-    {"q": "what is the capital of France?", "type": "random"},
-    {"q": "python list comprehension syntax", "type": "random"},
-    {"q": "best laptop for software development 2026", "type": "random"},
-    {"q": "what did Osho teach about meditation?", "type": "adjacent-trap"},
-    {"q": "explain Rajneesh's views on freedom and love", "type": "adjacent-trap"},
-    {"q": "what does the Bhagavad Gita say about the observer and the observed?", "type": "adjacent-trap"},
-    {"q": "how did Nietzsche define the will to power?", "type": "adjacent-trap"},
-    {"q": "what is Eckhart Tolle's concept of the pain body?", "type": "adjacent-trap"},
-    {"q": "summarize the Dalai Lama's teaching on compassion", "type": "adjacent-trap"},
-    {"q": "what did Ramana Maharshi say about self-inquiry, 'who am I'?", "type": "adjacent-trap"}
-  ]
+    {
+      "q": "how do I install postgresql on ubuntu?",
+      "type": "random"
+    },
+    {
+      "q": "bitcoin price prediction for next year",
+      "type": "random"
+    },
+    {
+      "q": "who won the 1998 football world cup?",
+      "type": "random"
+    },
+    {
+      "q": "recipe for banana bread",
+      "type": "random"
+    },
+    {
+      "q": "kubernetes ingress controller configuration",
+      "type": "random"
+    },
+    {
+      "q": "what is the capital of France?",
+      "type": "random"
+    },
+    {
+      "q": "python list comprehension syntax",
+      "type": "random"
+    },
+    {
+      "q": "best laptop for software development 2026",
+      "type": "random"
+    },
+    {
+      "q": "what did Osho teach about meditation?",
+      "type": "absent-person",
+      "evidence": "'Osho' occurs 0 times in the corpus."
+    },
+    {
+      "q": "explain Rajneesh's views on freedom and love",
+      "type": "mentioned-not-taught",
+      "evidence": "'Rajneesh' occurs 7 times - K refers to him dismissively (Schoenried, 12 Aug 1984). His views are not in the corpus; K's opinion of him is."
+    },
+    {
+      "q": "what does the Bhagavad Gita say about the observer and the observed?",
+      "type": "mentioned-not-taught",
+      "evidence": "'Gita' occurs 803 times. K discusses it often; the text's own content is not in the corpus."
+    },
+    {
+      "q": "how did Nietzsche define the will to power?",
+      "type": "absent-person",
+      "evidence": "'Nietzsche' occurs 0 times in the corpus."
+    },
+    {
+      "q": "what is Eckhart Tolle's concept of the pain body?",
+      "type": "absent-person",
+      "evidence": "'Eckhart' and 'Tolle' each occur 0 times in the corpus."
+    },
+    {
+      "q": "summarize the Dalai Lama's teaching on compassion",
+      "type": "mentioned-not-taught",
+      "evidence": "'Lama' 16, 'Dalai' 2 - K describes discussing with him (Brockwood, 22 May 1975). NOTE: the entity gate refuses this one, but only because 'Dalai' falls under KNOWN_ENTITY_MIN=3. Right answer, wrong reason - do not count it as a gate success."
+    },
+    {
+      "q": "what did Ramana Maharshi say about self-inquiry, 'who am I'?",
+      "type": "mentioned-not-taught",
+      "evidence": "'Ramana' 32, 'Maharshi' 14. Gstaad, 16 Aug 1962: 'I don't know these birds... Why should I know them?' The corpus holds K refusing the subject, not the teaching."
+    }
+  ],
+  "_categories": {
+    "random": "Unrelated to the corpus in topic. Cosine distance alone rejects these.",
+    "absent-person": "Names a teacher with zero occurrences in the corpus. The entity gate is designed for exactly this case.",
+    "mentioned-not-taught": "Names someone or something the corpus DOES contain, but only as K's passing reference or refusal - never their own teaching. Neither the cosine threshold nor a proper-noun gate can catch these; they are recorded as a known open failure mode, not as something the system handles."
+  },
+  "_note": "An earlier revision labelled all seven named-teacher questions 'adjacent-trap' and claimed their material was 'genuinely absent'. That was wrong for four of them, and the corpus itself is what proved it. The split below is evidence-backed; see the 'evidence' field on each."
 }

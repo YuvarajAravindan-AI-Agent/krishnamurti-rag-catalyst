@@ -10,29 +10,49 @@ This 6–8 minute technical podcast explains a RAG migration used as a
 substrate for demonstrating Catalyst 3.0's agentic DevOps pitch. A
 self-hosted FastAPI + Ollama + Chroma app answering questions over ~3,000
 J. Krishnamurti public talks moves to Zoho Catalyst's QuickML (managed
-retrieval + LLM serving) and AppSail (hosting). The actual subject of the
-podcast is the release-quality agent built on top of it: on any
-corpus/prompt/model change, it re-indexes, runs a 40-question golden
-evaluation suite (including adversarial off-corpus traps naming real but
-absent teachers — Osho, Ramana Maharshi, Eckhart Tolle), measures retrieval
+LLM serving) and AppSail (hosting). The actual subject of the podcast is the
+release-quality agent built on top of it: on any corpus/prompt/model change,
+it re-indexes, runs a 40-question golden evaluation suite, measures retrieval
 recall/citation accuracy/unsupported-claims rate/no-match precision/latency,
-and produces an accept/reject recommendation — then stops for human
-approval before promoting to production.
+and produces an accept/reject recommendation — then stops for human approval
+before promoting to production.
+
+The strongest material is that the evaluation caught two things nobody was
+looking for: a live defect in the app being migrated away from, and an error
+in the evaluation set itself.
 
 ## Important accuracy notes
 
-- The migration replaces Ollama/Chroma with QuickML entirely — it is not a
-  lift-and-shift. AppSail's 30-second request limit made the original
-  Ollama-based synthesis (measured up to 47s to first token) a genuine
-  timeout risk, not lifted over.
-- Full-corpus ingestion (3,014 transcripts) is a follow-up batch job — the
-  demo runs against a representative subset because QuickML's Knowledge
-  Base has no bulk-upload API, only a manual console UI capped at 10
-  files/round.
+- Retrieval did NOT move to QuickML. Its Knowledge Base has no ingestion API
+  — console UI only, ten files per round — so an agent cannot re-index, which
+  disqualified it. Retrieval runs inside the AppSail container using the same
+  all-MiniLM-L6-v2 model the original served via Ollama. QuickML is used for
+  synthesis only. Do not describe this as "moving to QuickML RAG".
+- AppSail's 30-second request limit made the original Ollama-based synthesis
+  (measured up to 47s to first token) a genuine timeout risk. That is why
+  synthesis left the box, and it is a real architecture change, not a rehost.
+- The full 163,829-chunk archive IS indexed. Its vectors were exported from
+  the original Chroma collection rather than recomputed, because they were
+  first measured as equivalent (mean cosine agreement 0.999998).
+- MIN_RELEVANCE = 0.5 carried over unchanged, and that was verified by
+  measurement, not assumed. Say so this way round; the claim only holds
+  because the embedding model is identical.
+- The Osho example is real and was observed on the live production site:
+  it scores 0.618 and answers. Do not soften this into a hypothetical.
+- CRITICAL — do not repeat the claim that Rajneesh, Ramana Maharshi, the
+  Bhagavad Gita or the Dalai Lama are "absent from the corpus". An earlier
+  draft said that and it is false. K discusses the Gita 803 times, refers to
+  Rajneesh, and describes meeting the Dalai Lama. On Ramana Maharshi
+  (Gstaad, 16 August 1962) he says "I don't know these birds... Why should I
+  know them?" Those questions remain unanswerable because the corpus holds
+  his refusal of the subject rather than the teaching — a distinct and
+  currently unsolved failure mode, scored 0/4 and reported as open.
+- Only three questions (Osho, Nietzsche, Eckhart Tolle) name people with zero
+  corpus occurrences. The entity gate handles those 3/3, with zero false
+  positives on the 25 in-corpus questions.
 - The agent never promotes to production itself; a human always approves.
-- The deliberate-regression run (staged after the first clean promotion) is
-  a real recorded run, not a hypothetical — state its actual outcome once
-  available rather than assuming pass/fail.
+- The deliberate-regression run is a real recorded run, not a hypothetical —
+  state its actual outcome once available rather than assuming pass/fail.
 - The model must never be treated as ground truth for whether a K quote is
   authentic — citations point back to the original kfoundation.org URL for
   verification.
@@ -41,16 +61,19 @@ approval before promoting to production.
 
 1. Why migrate: cost/ops burden of a self-managed VPS vs. wanting to
    demonstrate Catalyst 3.0's agentic DevOps tooling specifically.
-2. Architecture change: AppSail (FastAPI + static UI) → QuickML RAG/
-   Knowledge Base (retrieval) → QuickML managed LLM (synthesis).
-3. The golden evaluation set: why adversarial "adjacent-but-wrong" traps
-   (named philosophers who sound on-topic but aren't K) stress no-match
-   precision harder than random off-corpus questions would.
-4. The release-quality agent's loop: re-index → deploy to Development →
+2. Why the obvious architecture was rejected twice — Ollama couldn't stay
+   (30s AppSail limit vs 47s measured synthesis), and QuickML's Knowledge
+   Base couldn't take retrieval (no ingestion API, so no agent-driven
+   re-index). What's left: retrieval in-process, synthesis on QuickML.
+3. The golden evaluation set, and why the interesting axis is *why* a
+   question is unanswerable rather than just whether it is.
+4. The two findings: a live no-match defect in the production app, and the
+   mislabelled eval categories the corpus itself disproved.
+5. The release-quality agent's loop: re-index → deploy to Development →
    evaluate → inspect logs → report → stop for human approval.
-5. The regression demo: what changed, what the agent measured, what it
+6. The regression demo: what changed, what the agent measured, what it
    recommended, and why that's the actual point of the whole exercise.
-6. Observability: Catalyst Logs/Alerts/Metrics as the evidence source for
+7. Observability: Catalyst Logs/Alerts/Metrics as the evidence source for
    the agent's own report.
 
 ## Source links
