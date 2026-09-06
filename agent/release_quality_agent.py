@@ -48,6 +48,24 @@ class CaseResult:
     answer: str = ""
     latency: float = 0.0
     error: str = ""
+    # Which mechanism refused, straight from the app: "entity_gate",
+    # "relevance_threshold", or "" for not refused. Recording only *that* a
+    # question was refused hides the difference between a system that works
+    # and one that is lucky — see score_off_corpus().
+    refused_by: str = ""
+    unknown_entities: list = field(default_factory=list)
+    best_relevance: float = 0.0
+    category: str = ""
+    expected_gate: str | None = None
+
+    @property
+    def refused(self) -> bool:
+        return bool(self.refused_by)
+
+    @property
+    def accidental(self) -> bool:
+        """Refused, but not by the mechanism that was supposed to catch it."""
+        return self.refused and self.refused_by != self.expected_gate
 
 
 def load_golden_set() -> dict:
@@ -66,6 +84,9 @@ def call_app(base_url: str, question: str) -> CaseResult:
             passages=data.get("passages", []),
             answer=data.get("answer", ""),
             latency=time.time() - t0,
+            refused_by=data.get("refused_by", "") or "",
+            unknown_entities=data.get("unknown_entities", []) or [],
+            best_relevance=float(data.get("best_relevance", 0.0) or 0.0),
         )
     except Exception as e:
         return CaseResult(question=question, kind="", latency=time.time() - t0, error=str(e))
@@ -73,16 +94,57 @@ def call_app(base_url: str, question: str) -> CaseResult:
 
 def has_citation(passages: list) -> bool:
     for p in passages:
-        src = p.get("source") or p.get("url") or ""
+        # The retriever returns cite/url; older shapes used source. Check all
+        # three rather than silently scoring 0 if the field is renamed again.
+        src = p.get("url") or p.get("source") or p.get("cite") or ""
         if "kfoundation.org" in src:
             return True
     return False
 
 
-def looks_like_refusal(answer: str) -> bool:
-    markers = ["don't have", "no relevant", "not found", "outside", "cannot find",
-               "no information", "not covered", "unable to find"]
-    return any(m in answer.lower() for m in markers)
+def score_off_corpus(results: list[CaseResult]) -> dict:
+    """
+    Score refusals by mechanism, not just by outcome.
+
+    A question can be refused for the wrong reason, and counting that as a
+    success is how an evaluation suite starts lying to you. The Dalai Lama
+    case is the worked example: the entity gate refuses it only because
+    'Dalai' occurs twice, below KNOWN_ENTITY_MIN. One more mention anywhere
+    in the archive and the same question silently starts being answered.
+    Nothing about the system's handling of it would have changed; only the
+    luck would have run out.
+
+    So a refusal counts only when refused_by matches the category's
+    expected_gate. Anything else lands in accidental_refusals, which is
+    reported prominently and scored as a miss.
+    """
+    by_category: dict[str, dict] = {}
+    for r in results:
+        c = by_category.setdefault(r.category, {
+            "total": 0, "correct": 0, "accidental": 0, "answered": 0, "gates": {},
+        })
+        c["total"] += 1
+        c["gates"][r.refused_by or "(not refused)"] = \
+            c["gates"].get(r.refused_by or "(not refused)", 0) + 1
+        if not r.refused:
+            c["answered"] += 1
+        elif r.accidental:
+            c["accidental"] += 1
+        else:
+            c["correct"] += 1
+
+    correct = sum(c["correct"] for c in by_category.values())
+    total = sum(c["total"] for c in by_category.values())
+    return {
+        "by_category": by_category,
+        "no_match_precision": round(correct / total, 3) if total else 0.0,
+        "accidental_refusals": [
+            {"question": r.question, "category": r.category,
+             "refused_by": r.refused_by, "expected_gate": r.expected_gate,
+             "unknown_entities": r.unknown_entities}
+            for r in results if r.accidental
+        ],
+    }
 
 
 def score(in_corpus_results: list[CaseResult], off_corpus_results: list[CaseResult]) -> dict:
@@ -92,8 +154,16 @@ def score(in_corpus_results: list[CaseResult], off_corpus_results: list[CaseResu
     cited = sum(1 for r in in_corpus_results if has_citation(r.passages))
     citation_accuracy = cited / len(in_corpus_results) if in_corpus_results else 0.0
 
-    no_match_hits = sum(1 for r in off_corpus_results if looks_like_refusal(r.answer))
-    no_match_precision = no_match_hits / len(off_corpus_results) if off_corpus_results else 0.0
+    off = score_off_corpus(off_corpus_results)
+
+    # An in-corpus question that trips a gate is a false positive, and it is
+    # the cost side of the entity gate's ledger. Without this number the gate
+    # looks free, and "refuse more" would always score better.
+    false_gate_trips = [
+        {"question": r.question, "refused_by": r.refused_by,
+         "unknown_entities": r.unknown_entities}
+        for r in in_corpus_results if r.refused
+    ]
 
     all_latencies = sorted(r.latency for r in in_corpus_results + off_corpus_results if not r.error)
     p95_latency = all_latencies[int(len(all_latencies) * 0.95) - 1] if all_latencies else 0.0
@@ -101,7 +171,10 @@ def score(in_corpus_results: list[CaseResult], off_corpus_results: list[CaseResu
     return {
         "recall": round(recall, 3),
         "citation_accuracy": round(citation_accuracy, 3),
-        "no_match_precision": round(no_match_precision, 3),
+        "no_match_precision": off["no_match_precision"],
+        "off_corpus_by_category": off["by_category"],
+        "accidental_refusals": off["accidental_refusals"],
+        "false_gate_trips": false_gate_trips,
         "p95_latency_seconds": round(p95_latency, 2),
         # unsupported-claims rate needs an LLM judge pass - see judge_unsupported_claims()
     }
@@ -166,6 +239,39 @@ def render_report(scores: dict, unsupported_rate: float, verdict: dict, run_id: 
         f"| p95 latency (s) | {scores['p95_latency_seconds']} | ≤ {ACCEPTANCE['max_p95_latency_seconds']} | {'✅' if scores['p95_latency_seconds'] <= ACCEPTANCE['max_p95_latency_seconds'] else '❌'} |",
         f"| Unsupported-claims rate | {unsupported_rate if unsupported_rate >= 0 else 'not measured'} | ≤ {ACCEPTANCE['max_unsupported_claims_rate']} | {'✅' if 0 <= unsupported_rate <= ACCEPTANCE['max_unsupported_claims_rate'] else ('⚠️ not measured' if unsupported_rate < 0 else '❌')} |",
         "",
+        "## Off-corpus refusals by mechanism",
+        "",
+        "A refusal counts only when the mechanism that fired is the one the",
+        "category expects. Refusing for the wrong reason is recorded as a miss:",
+        "it will vanish the moment the corpus shifts.",
+        "",
+        "| Category | Correctly refused | Accidental | Answered | Gates that fired |",
+        "|---|---|---|---|---|",
+    ]
+    for cat, c in sorted(scores["off_corpus_by_category"].items()):
+        gates = ", ".join(f"{k} ×{v}" for k, v in sorted(c["gates"].items()))
+        lines.append(
+            f"| {cat} | {c['correct']}/{c['total']} | {c['accidental']} | {c['answered']} | {gates} |"
+        )
+
+    if scores["accidental_refusals"]:
+        lines += ["", "### Accidental refusals (right answer, wrong reason)", ""]
+        for a in scores["accidental_refusals"]:
+            ents = f" — entities {a['unknown_entities']}" if a["unknown_entities"] else ""
+            lines.append(
+                f"- *{a['question']}* — refused by `{a['refused_by']}`, expected "
+                f"`{a['expected_gate'] or 'no mechanism handles this category'}`{ents}"
+            )
+
+    if scores["false_gate_trips"]:
+        lines += ["", "### In-corpus questions wrongly refused (gate false positives)", ""]
+        for f in scores["false_gate_trips"]:
+            lines.append(f"- *{f['question']}* — `{f['refused_by']}` {f['unknown_entities']}")
+    else:
+        lines += ["", "No in-corpus question was refused: the entity gate has no false positives on this set."]
+
+    lines += [
+        "",
         f"## Recommendation: {verdict['recommendation']}",
         "",
         verdict["reasoning"],
@@ -216,8 +322,18 @@ def main():
     for item in golden["off_corpus"]:
         r = call_app(args.base_url, item["q"])
         r.kind = "off_corpus"
+        r.category = item["type"]
+        r.expected_gate = item.get("expected_gate")
         off_results.append(r)
-        print(f"  [off] {'OK' if not r.error else 'ERR'} {r.latency:.1f}s  {item['q'][:50]}")
+        if r.error:
+            mark = "ERR"
+        elif not r.refused:
+            mark = "ANSWERED"
+        elif r.accidental:
+            mark = f"ACCIDENTAL({r.refused_by})"
+        else:
+            mark = f"refused({r.refused_by})"
+        print(f"  [off] {mark:26} {r.latency:.1f}s  {item['q'][:46]}")
 
     scores = score(in_results, off_results)
     unsupported_rate = judge_unsupported_claims(in_results, args.deepseek_key)

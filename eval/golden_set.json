@@ -104,76 +104,92 @@
   "off_corpus": [
     {
       "q": "how do I install postgresql on ubuntu?",
-      "type": "random"
+      "type": "random",
+      "expected_gate": "relevance_threshold"
     },
     {
       "q": "bitcoin price prediction for next year",
-      "type": "random"
+      "type": "random",
+      "expected_gate": "relevance_threshold"
     },
     {
       "q": "who won the 1998 football world cup?",
-      "type": "random"
+      "type": "random",
+      "expected_gate": "relevance_threshold"
     },
     {
       "q": "recipe for banana bread",
-      "type": "random"
+      "type": "random",
+      "expected_gate": "relevance_threshold"
     },
     {
       "q": "kubernetes ingress controller configuration",
-      "type": "random"
+      "type": "random",
+      "expected_gate": "relevance_threshold"
     },
     {
       "q": "what is the capital of France?",
-      "type": "random"
+      "type": "random",
+      "expected_gate": "relevance_threshold"
     },
     {
       "q": "python list comprehension syntax",
-      "type": "random"
+      "type": "random",
+      "expected_gate": "relevance_threshold"
     },
     {
       "q": "best laptop for software development 2026",
-      "type": "random"
+      "type": "random",
+      "expected_gate": "relevance_threshold"
     },
     {
       "q": "what did Osho teach about meditation?",
       "type": "absent-person",
-      "evidence": "'Osho' occurs 0 times in the corpus."
+      "evidence": "'Osho' occurs 0 times in the corpus.",
+      "expected_gate": "entity_gate"
     },
     {
       "q": "explain Rajneesh's views on freedom and love",
       "type": "mentioned-not-taught",
-      "evidence": "'Rajneesh' occurs 7 times - K refers to him dismissively (Schoenried, 12 Aug 1984). His views are not in the corpus; K's opinion of him is."
+      "evidence": "'Rajneesh' occurs 7 times - K refers to him dismissively (Schoenried, 12 Aug 1984). His views are not in the corpus; K's opinion of him is.",
+      "expected_gate": null
     },
     {
       "q": "what does the Bhagavad Gita say about the observer and the observed?",
       "type": "mentioned-not-taught",
-      "evidence": "'Gita' occurs 803 times. K discusses it often; the text's own content is not in the corpus."
+      "evidence": "'Gita' occurs 803 times. K discusses it often; the text's own content is not in the corpus.",
+      "expected_gate": null
     },
     {
       "q": "how did Nietzsche define the will to power?",
       "type": "absent-person",
-      "evidence": "'Nietzsche' occurs 0 times in the corpus."
+      "evidence": "'Nietzsche' occurs 0 times in the corpus.",
+      "expected_gate": "entity_gate"
     },
     {
       "q": "what is Eckhart Tolle's concept of the pain body?",
       "type": "absent-person",
-      "evidence": "'Eckhart' and 'Tolle' each occur 0 times in the corpus."
+      "evidence": "'Eckhart' and 'Tolle' each occur 0 times in the corpus.",
+      "expected_gate": "entity_gate"
     },
     {
       "q": "summarize the Dalai Lama's teaching on compassion",
       "type": "mentioned-not-taught",
-      "evidence": "'Lama' 16, 'Dalai' 2 - K describes discussing with him (Brockwood, 22 May 1975). NOTE: the entity gate refuses this one, but only because 'Dalai' falls under KNOWN_ENTITY_MIN=3. Right answer, wrong reason - do not count it as a gate success."
+      "evidence": "'Lama' 16, 'Dalai' 2 - K describes discussing with him (Brockwood, 22 May 1975). NOTE: the entity gate refuses this one, but only because 'Dalai' falls under KNOWN_ENTITY_MIN=3. Right answer, wrong reason - do not count it as a gate success.",
+      "expected_gate": null
     },
     {
       "q": "what did Ramana Maharshi say about self-inquiry, 'who am I'?",
       "type": "mentioned-not-taught",
-      "evidence": "'Ramana' 32, 'Maharshi' 14. Gstaad, 16 Aug 1962: 'I don't know these birds... Why should I know them?' The corpus holds K refusing the subject, not the teaching."
+      "evidence": "'Ramana' 32, 'Maharshi' 14. Gstaad, 16 Aug 1962: 'I don't know these birds... Why should I know them?' The corpus holds K refusing the subject, not the teaching.",
+      "expected_gate": null
     }
   ],
   "_categories": {
     "random": "Unrelated to the corpus in topic. Cosine distance alone rejects these.",
     "absent-person": "Names a teacher with zero occurrences in the corpus. The entity gate is designed for exactly this case.",
-    "mentioned-not-taught": "Names someone or something the corpus DOES contain, but only as K's passing reference or refusal - never their own teaching. Neither the cosine threshold nor a proper-noun gate can catch these; they are recorded as a known open failure mode, not as something the system handles."
+    "mentioned-not-taught": "Names someone or something the corpus DOES contain, but only as K's passing reference or refusal - never their own teaching. Neither the cosine threshold nor a proper-noun gate can catch these; they are recorded as a known open failure mode, not as something the system handles. expected_gate is null: a refusal here is not evidence the system handles the case, so the scorer must not credit one."
   },
-  "_note": "An earlier revision labelled all seven named-teacher questions 'adjacent-trap' and claimed their material was 'genuinely absent'. That was wrong for four of them, and the corpus itself is what proved it. The split below is evidence-backed; see the 'evidence' field on each."
+  "_note": "An earlier revision labelled all seven named-teacher questions 'adjacent-trap' and claimed their material was 'genuinely absent'. That was wrong for four of them, and the corpus itself is what proved it. The split below is evidence-backed; see the 'evidence' field on each.",
+  "_expected_gate": "Which mechanism SHOULD refuse the question. The scorer compares this against the refused_by the app actually returns. A refusal by the wrong mechanism is recorded as an accidental refusal and scored as a failure, because it will disappear the moment the corpus shifts — the Dalai Lama case refuses only because 'Dalai' happens to occur twice, and a single extra mention would silently turn it into a wrong answer."
 }
