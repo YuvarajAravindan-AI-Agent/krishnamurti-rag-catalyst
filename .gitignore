@@ -1,0 +1,12 @@
+data/transcripts.json
+data/documents/
+data/demo_subset/
+data/chroma/
+data/chunks.json
+data/corpus.json
+data/wikiquote*
+reports/
+__pycache__/
+*.pyc
+.catalystrc
+.env

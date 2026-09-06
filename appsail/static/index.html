@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Krishnamurti RAG - Catalyst 3.0</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body { font-family: Georgia, serif; max-width: 720px; margin: 40px auto; padding: 0 16px; color: #222; background: #fafaf7; }
+  h1 { font-size: 1.4rem; font-weight: normal; border-bottom: 1px solid #ccc; padding-bottom: 12px; }
+  textarea { width: 100%; font-size: 1rem; padding: 10px; box-sizing: border-box; }
+  button { margin-top: 10px; padding: 8px 20px; font-size: 1rem; cursor: pointer; }
+  .passages { background: #fff; border-left: 3px solid #999; padding: 12px 16px; margin-top: 20px; }
+  .passage { margin-bottom: 14px; font-size: 0.9rem; }
+  .passage cite { display: block; color: #666; font-size: 0.8rem; margin-top: 4px; }
+  .answer-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #888; margin-top: 24px; }
+  .answer { font-size: 1.05rem; line-height: 1.6; }
+  .meta { font-size: 0.75rem; color: #999; margin-top: 20px; }
+</style>
+</head>
+<body>
+<h1>Krishnamurti RAG — running on Zoho Catalyst 3.0</h1>
+<p>Ask a question grounded in the K Foundation transcript corpus. Passages are shown first, exactly as retrieved; the summary below is model-written and may be wrong — check it against the passages.</p>
+<textarea id="q" rows="2" placeholder="What is fear?"></textarea><br>
+<button id="ask">Ask</button>
+<div id="result"></div>
+<script>
+document.getElementById('ask').onclick = async () => {
+  const q = document.getElementById('q').value.trim();
+  if (!q) return;
+  const result = document.getElementById('result');
+  result.innerHTML = '<p><em>Retrieving passages…</em></p>';
+  const t0 = performance.now();
+  try {
+    const res = await fetch('/api/ask', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({question: q})
+    });
+    const data = await res.json();
+    const elapsed = ((performance.now() - t0) / 1000).toFixed(2);
+    const passages = (data.passages || []).map(p =>
+      `<div class="passage">${(p.text || p.content || JSON.stringify(p))}<cite>${p.source || p.url || ''}</cite></div>`
+    ).join('') || '<p><em>No passages returned.</em></p>';
+    result.innerHTML = `
+      <div class="passages">${passages}</div>
+      <div class="answer-label">Model-written summary</div>
+      <div class="answer">${data.answer || '<em>No answer returned.</em>'}</div>
+      <div class="meta">server latency: ${data.latency_seconds}s · round-trip: ${elapsed}s</div>
+    `;
+  } catch (e) {
+    result.innerHTML = `<p style="color:red">Error: ${e}</p>`;
+  }
+};
+</script>
+</body>
+</html>
