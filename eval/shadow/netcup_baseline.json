@@ -1,0 +1,247 @@
+{
+  "chunks": 163829,
+  "in_corpus": [
+    {
+      "q": "what is fear?",
+      "theme": "fear",
+      "best": 0.75,
+      "top_source": "Public Talk 11, Ojai, California, 30 June 1934"
+    },
+    {
+      "q": "why does fear control our lives?",
+      "theme": "fear",
+      "best": 0.715,
+      "top_source": "Public Questions 1, Ojai, California, 4 May 1982"
+    },
+    {
+      "q": "is it possible to be free of fear completely?",
+      "theme": "fear",
+      "best": 0.864,
+      "top_source": "Public Talk 1, London, 5 June 1982"
+    },
+    {
+      "q": "what is the relationship between thought and fear?",
+      "theme": "fear",
+      "best": 0.827,
+      "top_source": "Public Talk 3, Ojai, California, 14 April 1979"
+    },
+    {
+      "q": "why do we seek authority in matters of the mind?",
+      "theme": "authority",
+      "best": 0.801,
+      "top_source": "Public Talk 1, Brussels, 16 June 1956"
+    },
+    {
+      "q": "can a guru actually help you understand yourself?",
+      "theme": "authority",
+      "best": 0.711,
+      "top_source": "Public Talk 1, Bangalore, 5 January 1974"
+    },
+    {
+      "q": "what is the danger of following a spiritual teacher?",
+      "theme": "authority",
+      "best": 0.611,
+      "top_source": "Public Talk 4, Poona, 17 September 1958"
+    },
+    {
+      "q": "what is self-knowledge?",
+      "theme": "self-knowledge",
+      "best": 0.793,
+      "top_source": "Public Talk 1, Athens, 24 September 1956"
+    },
+    {
+      "q": "how do you observe yourself without judgment?",
+      "theme": "self-knowledge",
+      "best": 0.733,
+      "top_source": "K School Discussion 3, Brockwood Park, 4 October 1973"
+    },
+    {
+      "q": "the observer is the observed - what does that mean?",
+      "theme": "self-knowledge",
+      "best": 0.735,
+      "top_source": "Public Questions 1, Ojai, California, 6 May 1980"
+    },
+    {
+      "q": "what is the root of conflict in relationship?",
+      "theme": "relationship",
+      "best": 0.821,
+      "top_source": "Public Talk 6, Ommen, 8 August 1937"
+    },
+    {
+      "q": "can two people live together without friction?",
+      "theme": "relationship",
+      "best": 0.53,
+      "top_source": "Public Talk 4, Ojai, California, 16 June 1940"
+    },
+    {
+      "q": "what does it mean to truly listen to another person?",
+      "theme": "relationship",
+      "best": 0.684,
+      "top_source": "Public Talk 1, Rajghat, 24 November 1963"
+    },
+    {
+      "q": "what is awareness without choice?",
+      "theme": "awareness",
+      "best": 0.745,
+      "top_source": "Public Talk 5, Ojai, California, 12 November 1966"
+    },
+    {
+      "q": "how is meditation different from concentration?",
+      "theme": "awareness",
+      "best": 0.748,
+      "top_source": "Public Talk 5, Ojai, California, 12 November 1966"
+    },
+    {
+      "q": "can the mind be free of all conditioning?",
+      "theme": "awareness",
+      "best": 0.817,
+      "top_source": "Public Talk 3, Saanen, 11 July 1968"
+    },
+    {
+      "q": "what is the nature of thought itself?",
+      "theme": "thought",
+      "best": 0.771,
+      "top_source": "Public Talk 4, Saanen, 24 July 1969"
+    },
+    {
+      "q": "why does the mind seek security through belief?",
+      "theme": "thought",
+      "best": 0.763,
+      "top_source": "Public Talk 2, Paris, 16 April 1950"
+    },
+    {
+      "q": "what is love, and is it different from desire?",
+      "theme": "love",
+      "best": 0.717,
+      "top_source": "Public Talk 4, New York City, 3 October 1966"
+    },
+    {
+      "q": "why do we compare ourselves to others?",
+      "theme": "comparison",
+      "best": 0.724,
+      "top_source": "Public Talk 2, Saanen, 11 July 1967"
+    },
+    {
+      "q": "is there a difference between the thinker and the thought?",
+      "theme": "thought",
+      "best": 0.822,
+      "top_source": "Public Talk 1, New York City, 4 June 1950"
+    },
+    {
+      "q": "what is the nature of truth - can it be organized into a system?",
+      "theme": "truth",
+      "best": 0.662,
+      "top_source": "Public Talk 5, Bombay, 22 February 1953"
+    },
+    {
+      "q": "why does the mind cling to the past?",
+      "theme": "memory",
+      "best": 0.694,
+      "top_source": "Public Talk 5, Seattle, Washington, 13 August 1950"
+    },
+    {
+      "q": "what is total freedom and is it different from doing what one likes?",
+      "theme": "freedom",
+      "best": 0.736,
+      "top_source": "K School \u2013 Students Talk 1, Rajghat, 1 February 1960"
+    },
+    {
+      "q": "what did you mean by 'freedom from the known'?",
+      "theme": "freedom",
+      "best": 0.705,
+      "top_source": "Trustees Discussion, Rougemont, 15 July 1985"
+    }
+  ],
+  "off_corpus": [
+    {
+      "q": "how do I install postgresql on ubuntu?",
+      "type": "random",
+      "best": 0.188,
+      "top_source": "Public Talk 3, Bombay, 14 February 1971"
+    },
+    {
+      "q": "bitcoin price prediction for next year",
+      "type": "random",
+      "best": 0.277,
+      "top_source": "Seminar, Calcutta, 25 November 1982"
+    },
+    {
+      "q": "who won the 1998 football world cup?",
+      "type": "random",
+      "best": 0.167,
+      "top_source": "Public Talk 1, Ommen, 3 August 1933"
+    },
+    {
+      "q": "recipe for banana bread",
+      "type": "random",
+      "best": 0.362,
+      "top_source": "Public Talk 1, Bombay, 4 November 1938"
+    },
+    {
+      "q": "kubernetes ingress controller configuration",
+      "type": "random",
+      "best": 0.283,
+      "top_source": "K School Discussion 6, Brockwood Park, 14 October 1976"
+    },
+    {
+      "q": "what is the capital of France?",
+      "type": "random",
+      "best": 0.339,
+      "top_source": "K School \u2013 Adults Discussion 2, Brockwood Park, 21 September 1973"
+    },
+    {
+      "q": "python list comprehension syntax",
+      "type": "random",
+      "best": 0.269,
+      "top_source": "K School \u2013 Adults Discussion 7, Ojai, California, 15 May 1984"
+    },
+    {
+      "q": "best laptop for software development 2026",
+      "type": "random",
+      "best": 0.36,
+      "top_source": "Public Questions 1, Rajghat, 28 November 1981"
+    },
+    {
+      "q": "what did Osho teach about meditation?",
+      "type": "adjacent-trap",
+      "best": 0.618,
+      "top_source": "K School Discussion 1, Brockwood Park, 23 September 1975"
+    },
+    {
+      "q": "explain Rajneesh's views on freedom and love",
+      "type": "adjacent-trap",
+      "best": 0.569,
+      "top_source": "Public Talk 1, New Delhi, 19 November 1967"
+    },
+    {
+      "q": "what does the Bhagavad Gita say about the observer and the observed?",
+      "type": "adjacent-trap",
+      "best": 0.615,
+      "top_source": "Students Discussion 2, Amsterdam, 8 May 1969"
+    },
+    {
+      "q": "how did Nietzsche define the will to power?",
+      "type": "adjacent-trap",
+      "best": 0.584,
+      "top_source": "Public Talk 3, Saanen, 15 July 1976"
+    },
+    {
+      "q": "what is Eckhart Tolle's concept of the pain body?",
+      "type": "adjacent-trap",
+      "best": 0.568,
+      "top_source": "Public Discussion 3, Madras, 9 January 1968"
+    },
+    {
+      "q": "summarize the Dalai Lama's teaching on compassion",
+      "type": "adjacent-trap",
+      "best": 0.577,
+      "top_source": "Public Talk 4, Brockwood Park, 1 September 1985"
+    },
+    {
+      "q": "what did Ramana Maharshi say about self-inquiry, 'who am I'?",
+      "type": "adjacent-trap",
+      "best": 0.553,
+      "top_source": "K School Discussion 4, Brockwood Park, 28 May 1978"
+    }
+  ]
+}
