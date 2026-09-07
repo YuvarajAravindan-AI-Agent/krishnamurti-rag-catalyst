@@ -1,0 +1,8 @@
+{
+  "ok": true,
+  "chunks": 163829,
+  "talks": 3037,
+  "corpus_fingerprint": "b6036b9c72f9ba6c",
+  "embedding_model": "all-MiniLM-L6-v2 (ollama all-minilm, carried over)",
+  "min_relevance": 0.5
+}

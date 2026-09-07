@@ -1,0 +1,8 @@
+{
+  "question": "what did Osho teach about meditation?",
+  "refused_by": "entity_gate",
+  "unknown_entities": [
+    "Osho"
+  ],
+  "best_relevance": 0.618
+}

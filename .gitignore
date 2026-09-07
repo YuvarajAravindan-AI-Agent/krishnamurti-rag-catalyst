@@ -18,3 +18,4 @@ appsail/index
 index-full/
 dist/
 .env.local
+media/_frames/

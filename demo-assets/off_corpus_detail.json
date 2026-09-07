@@ -1,0 +1,153 @@
+{
+  "by_category": {
+    "random": {
+      "n": 8,
+      "correct": 8,
+      "accidental": 0,
+      "answered": 0
+    },
+    "absent-person": {
+      "n": 3,
+      "correct": 3,
+      "accidental": 0,
+      "answered": 0
+    },
+    "mentioned-not-taught": {
+      "n": 4,
+      "correct": 0,
+      "accidental": 1,
+      "answered": 3
+    }
+  },
+  "cases": [
+    {
+      "q": "how do I install postgresql on ubuntu?",
+      "category": "random",
+      "expected_gate": "relevance_threshold",
+      "fired": "relevance_threshold",
+      "best_relevance": 0.188,
+      "unknown_entities": []
+    },
+    {
+      "q": "bitcoin price prediction for next year",
+      "category": "random",
+      "expected_gate": "relevance_threshold",
+      "fired": "relevance_threshold",
+      "best_relevance": 0.294,
+      "unknown_entities": []
+    },
+    {
+      "q": "who won the 1998 football world cup?",
+      "category": "random",
+      "expected_gate": "relevance_threshold",
+      "fired": "relevance_threshold",
+      "best_relevance": 0.252,
+      "unknown_entities": []
+    },
+    {
+      "q": "recipe for banana bread",
+      "category": "random",
+      "expected_gate": "relevance_threshold",
+      "fired": "relevance_threshold",
+      "best_relevance": 0.362,
+      "unknown_entities": []
+    },
+    {
+      "q": "kubernetes ingress controller configuration",
+      "category": "random",
+      "expected_gate": "relevance_threshold",
+      "fired": "relevance_threshold",
+      "best_relevance": 0.285,
+      "unknown_entities": []
+    },
+    {
+      "q": "what is the capital of France?",
+      "category": "random",
+      "expected_gate": "relevance_threshold",
+      "fired": "relevance_threshold",
+      "best_relevance": 0.339,
+      "unknown_entities": []
+    },
+    {
+      "q": "python list comprehension syntax",
+      "category": "random",
+      "expected_gate": "relevance_threshold",
+      "fired": "relevance_threshold",
+      "best_relevance": 0.277,
+      "unknown_entities": []
+    },
+    {
+      "q": "best laptop for software development 2026",
+      "category": "random",
+      "expected_gate": "relevance_threshold",
+      "fired": "relevance_threshold",
+      "best_relevance": 0.36,
+      "unknown_entities": []
+    },
+    {
+      "q": "what did Osho teach about meditation?",
+      "category": "absent-person",
+      "expected_gate": "entity_gate",
+      "fired": "entity_gate",
+      "best_relevance": 0.618,
+      "unknown_entities": [
+        "Osho"
+      ]
+    },
+    {
+      "q": "explain Rajneesh's views on freedom and love",
+      "category": "mentioned-not-taught",
+      "expected_gate": null,
+      "fired": null,
+      "best_relevance": 0.569,
+      "unknown_entities": []
+    },
+    {
+      "q": "what does the Bhagavad Gita say about the observer and the observed?",
+      "category": "mentioned-not-taught",
+      "expected_gate": null,
+      "fired": null,
+      "best_relevance": 0.615,
+      "unknown_entities": []
+    },
+    {
+      "q": "how did Nietzsche define the will to power?",
+      "category": "absent-person",
+      "expected_gate": "entity_gate",
+      "fired": "entity_gate",
+      "best_relevance": 0.584,
+      "unknown_entities": [
+        "Nietzsche"
+      ]
+    },
+    {
+      "q": "what is Eckhart Tolle's concept of the pain body?",
+      "category": "absent-person",
+      "expected_gate": "entity_gate",
+      "fired": "entity_gate",
+      "best_relevance": 0.568,
+      "unknown_entities": [
+        "Eckhart",
+        "Tolle"
+      ]
+    },
+    {
+      "q": "summarize the Dalai Lama's teaching on compassion",
+      "category": "mentioned-not-taught",
+      "expected_gate": null,
+      "fired": "entity_gate",
+      "best_relevance": 0.577,
+      "unknown_entities": [
+        "Dalai"
+      ]
+    },
+    {
+      "q": "what did Ramana Maharshi say about self-inquiry, 'who am I'?",
+      "category": "mentioned-not-taught",
+      "expected_gate": null,
+      "fired": null,
+      "best_relevance": 0.553,
+      "unknown_entities": []
+    }
+  ]
+}
